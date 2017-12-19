@@ -104,9 +104,6 @@ class MyTodo
     end
   end
 
-  # removing the save_out_yaml call. controversial perhaps, but there
-  # shouldn't be any data to save on this event, it should have been saved on
-  # the creation events
   def on_maintodowindow_destroy(widget); Gtk.main_quit; end
 
   def on_addbutton_clicked(widget)
@@ -141,10 +138,6 @@ class MyTodo
       end
       save_out_yaml
     end
-  end
-
-  def on_treeview1_row_activated(view,path,column)
-    puts "on_treeview1_row_activated called"
   end
 
   def on_titleentry_key_release_event(entry,key)
