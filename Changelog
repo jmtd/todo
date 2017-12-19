@@ -1,0 +1,23 @@
+Fri Jan 20 11:53:04 GMT 2006
+initial import from `scifi'
+mass rename scifi -> todo in .glade, .rb
+remove a whole lot of stuff todo with adding items
+move glade files from subdir to .
+removed lots of signals
+
+
+Fri Jan 20 13:41:01 GMT 2006
+comment out two of the three fields on the add dialogue
+add signals to newbutton & addbutton (clicked), treeview (keypress)
+re-add event handlers for above
+def save_out_yaml: .to_yaml's the list and writes it to todo.yaml
+call ^^ from the quit methods
+
+
+Sat Jan 21 23:16:38 GMT 2006
+change title for the main window
+add signal to cancel button
+remove 'Sci-fi' label
+remove firstname/surname rows, labels, inputs
+add reorder property to treeview (drag-and-drop)
+add a stub row selected module

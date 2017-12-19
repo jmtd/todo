@@ -1,0 +1,155 @@
+#!/usr/bin/env ruby
+# vim: set ts=2 sts=2 sw=2 expandtab tw=78 list listchars=tab\:>.:
+require 'libglade2'
+require 'yaml'
+require 'date'
+
+# add some convenience functions to the Gtk::ListStore class
+class Gtk::ListStore
+  def move_to_end(iter);  move_before(iter,nil); end
+  def insert_at_end(); insert_before(nil); end
+end
+
+class TodoItem
+  attr_reader :title, :completed, :date_created, :date_completed
+  attr_writer :date_created, :date_completed
+  def initialize(title,completed)
+    @title = title
+    @completed = completed
+    @date_created   = nil
+    @date_completed = nil
+  end
+end
+
+# columns
+(
+  TITLE_COLUMN,
+  COMPLETED_COLUMN,
+  DATE_CREATED_COLUMN,
+  DATE_COMPLETED_COLUMN,
+
+  NUM_COLUMNS,
+) = *(0..9).to_a
+
+class MyTodo
+  def initialize
+    path = ENV['HOME']+'/.todo'
+    Dir.mkdir(path) unless File.exists?(path) and File.directory?(path)
+
+    @yamlfile = path+'/todo.yaml'
+    @yaml = []
+    @yaml = YAML::load_file(@yamlfile) if File.exists?(@yamlfile)
+
+    @glade = GladeXML.new("todo.glade") { |handler| method(handler) }
+    if @glade["treeview1"] then
+      @treeview = @glade["treeview1"]
+    else
+      puts "missing widget treeview1"
+      Gtk.main_quit
+      exit 1
+    end
+
+    @model = Gtk::ListStore.new(String,TrueClass,DateTime,DateTime)
+
+    # the TO-DO item text
+    t = Gtk::CellRendererText.new
+    c = Gtk::TreeViewColumn.new('Title', t, {:text=> 0, :strikethrough => 1})
+    c.set_expand(true)
+    @treeview.append_column(c)
+
+    # the tick-box
+    t = Gtk::CellRendererToggle.new
+    t.signal_connect("toggled") { |cell,path|
+      iter = @model.get_iter(Gtk::TreePath.new(path))
+      iter[COMPLETED_COLUMN] ^= 1
+      if iter[COMPLETED_COLUMN] then
+        iter[DATE_COMPLETED_COLUMN] = DateTime::now
+        @model.move_to_end(iter)
+      end
+      save_out_yaml
+    }
+    c = Gtk::TreeViewColumn.new('Completed?', t, {:active => 1})
+    @treeview.append_column(c)
+
+    # import the data
+    @yaml.each do |r|
+      row = @model.append # creates a GtkTreeIter
+      row[TITLE_COLUMN] = r.title
+      row[COMPLETED_COLUMN] = r.completed
+
+      # dates are a new addition. if they're missing, add them
+      date_created   = r.date_created ? r.date_created : DateTime::now
+      date_completed = DateTime::now if r.completed and !r.date_completed
+      row[DATE_CREATED_COLUMN]   = date_created
+      row[DATE_COMPLETED_COLUMN] = date_completed
+    end
+
+    @treeview.set_model(@model)
+  end
+
+  def save_out_yaml
+    ar = []
+    @model.each do |model,path,iter|
+      ti = TodoItem.new(iter[TITLE_COLUMN],iter[COMPLETED_COLUMN])
+      if iter[COMPLETED_COLUMN] then
+        ti.date_completed = iter[DATE_COMPLETED_COLUMN]
+      end
+      ti.date_created = iter[DATE_CREATED_COLUMN]
+      ar << ti
+    end
+    File.open(@yamlfile,"w") do |f|
+      f << ar.to_yaml
+    end
+  end
+
+  # removing the save_out_yaml call. controversial perhaps, but there
+  # shouldn't be any data to save on this event, it should have been saved on
+  # the creation events
+  def on_maintodowindow_destroy(widget); Gtk.main_quit; end
+
+  def on_addbutton_clicked(widget)
+    row = nil
+    @model.each do |model,path,iter|
+      unless false == iter[COMPLETED_COLUMN] then
+        row = @model.insert_before(iter)
+        break
+      end
+    end
+    row = @model.insert_at_end unless row
+    row[TITLE_COLUMN] = @glade['titleentry'].text
+    row[DATE_CREATED_COLUMN] = DateTime::now
+    save_out_yaml
+    @glade['titleentry'].set_text('')
+  end
+
+  def on_treeview1_key_press_event(tree,key)
+    if Gdk::Keyval::GDK_Delete == key.keyval then
+      e = tree.selection.selected
+      unless nil == e then
+        @model.remove(e)
+        save_out_yaml
+      end
+    elsif Gdk::Keyval::GDK_space == key.keyval then
+      iter = tree.selection.selected
+      # some duplication with anon callback above, here
+      iter[COMPLETED_COLUMN] ^= 1
+      if iter[COMPLETED_COLUMN] then
+        iter[DATE_COMPLETED_COLUMN] = DateTime::now
+        @model.move_to_end(iter)
+      end
+      save_out_yaml
+    end
+  end
+
+  def on_treeview1_row_activated(view,path,column)
+    puts "on_treeview1_row_activated called"
+  end
+
+  def on_titleentry_key_release_event(entry,key)
+    on_addbutton_clicked(entry) if Gdk::Keyval::GDK_Return == key.keyval
+  end
+
+end # class MyTodo
+
+MyTodo.new
+Gtk.main
