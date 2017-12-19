@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
-# vim: set ts=2 sts=2 sw=2 expandtab tw=78 list listchars=tab\:>.:
-require 'libglade2'
+require 'gtk2'
 require 'yaml'
 require 'date'
 
@@ -40,9 +39,12 @@ class MyTodo
     @yaml = []
     @yaml = YAML::load_file(@yamlfile) if File.exists?(@yamlfile)
 
-    @glade = GladeXML.new("todo.glade") { |handler| method(handler) }
-    if @glade["treeview1"] then
-      @treeview = @glade["treeview1"]
+    builder = Gtk::Builder::new
+    builder.add_from_file("todo.builder")
+    builder.connect_signals { |h| method(h) }
+    if builder["treeview1"] then
+      @treeview = builder["treeview1"]
+      @titleentry = builder["titleentry"]
     else
       puts "missing widget treeview1"
       Gtk.main_quit
@@ -116,10 +118,10 @@ class MyTodo
       end
     end
     row = @model.insert_at_end unless row
-    row[TITLE_COLUMN] = @glade['titleentry'].text
+    row[TITLE_COLUMN] = @titleentry.text
     row[DATE_CREATED_COLUMN] = DateTime::now
     save_out_yaml
-    @glade['titleentry'].set_text('')
+    @titleentry.set_text('')
   end
 
   def on_treeview1_key_press_event(tree,key)
