@@ -39,7 +39,6 @@
                 <property name="reorderable">True</property>
                 <property name="enable_search">True</property>
                 <signal handler="on_treeview1_key_press_event" last_modification_time="Mon, 19 Dec 2005 22:55:27 GMT" name="key-press-event"/>
-                <signal handler="on_treeview1_row_activated" last_modification_time="Sat, 21 Jan 2006 23:30:00 GMT" name="row_activated"/>
               </object>
             </child>
           </object>
