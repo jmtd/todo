@@ -2,6 +2,8 @@
 require 'gtk2'
 require 'yaml'
 require 'date'
+require 'fileutils'
+
 
 # add some convenience functions to the Gtk::ListStore class
 class Gtk::ListStore
@@ -30,10 +32,13 @@ end
   NUM_COLUMNS,
 ) = *(0..9).to_a
 
+PACKAGE = "org.redmars.todo"
+
 class MyTodo
+
   def initialize
-    path = ENV['HOME']+'/.todo'
-    Dir.mkdir(path) unless File.exists?(path) and File.directory?(path)
+    path = File.join(ENV['XDG_DATA_HOME'] || File.join(ENV['HOME'], ".local", "share"), PACKAGE)
+    FileUtils.mkdir_p(path) unless File.exists?(path) and File.directory?(path)
 
     @yamlfile = path+'/todo.yaml'
     @yaml = []
