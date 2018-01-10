@@ -37,12 +37,15 @@ PACKAGE = "org.redmars.todo"
 class MyTodo
 
   def initialize
-    path = File.join(ENV['XDG_DATA_HOME'] || File.join(ENV['HOME'], ".local", "share"), PACKAGE)
-    FileUtils.mkdir_p(path) unless File.exists?(path) and File.directory?(path)
+    if ARGV.length >0 then
+      @yamlfile = ARGV[0]
+    else
+      path = File.join(ENV['XDG_DATA_HOME'] || File.join(ENV['HOME'], ".local", "share"), PACKAGE)
+      FileUtils.mkdir_p(path) unless File.exists?(path) and File.directory?(path)
+      @yamlfile = File.join(path,'todo.yaml')
+    end
 
-    @yamlfile = path+'/todo.yaml'
-    @yaml = []
-    @yaml = YAML::load_file(@yamlfile) if File.exists?(@yamlfile)
+    @yaml = (YAML::load_file(@yamlfile) if File.exists?(@yamlfile)) || []
 
     builder = Gtk::Builder::new
     builder.add_from_file("todo.builder")
