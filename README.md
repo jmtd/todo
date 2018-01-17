@@ -11,7 +11,7 @@ program, type some tasks, tick some off, no need to learn any other concepts.
 ## Usage/Installation
 
 Presently you need to run the `./todo` script from a working directory containing
-the `todo.builder` file (such as a clone of this git repository.`))
+the `todo.builder` file (such as a clone of this git repository.)
 
 ## Data Storage
 
